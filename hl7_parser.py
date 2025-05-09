@@ -7,16 +7,26 @@ from parser.hl7_parser import (
 	build_appointment_object
 )
 
-if __name__ == "__main__":
-	filepath = "E:\Learn\hl7-parser\examples\example1.hl7"
-
-	message = read_hl7_file(filepath)
-	segments = message_parser(message)
-	extracted = segment_parser(segments)
+def main():
+	parser = argparse.ArgumentParser(description="HL7 SIU^S12 Appointment Parser")
+	parser.add_argument("filepath", help="Path to .hl7 file")
+	parser.add_argument("--pretty", action="store_true", help="Pretty-print the JSON output")
+	
+	args = parser.parse_args()
 
 	try:
+		message = read_hl7_file(args.filepath)
+		segments = message_parser(message)
+		extracted = segment_parser(segments)
 		appointment = build_appointment_object(extracted)
-		print("✅ Parsed Appointment Object:")
-		print(json.dumps(appointment, indent=2, default=str))  # default=str handles dates
-	except ValueError as e:
-		print(f"❌ Error: {e}")
+
+		if args.pretty:
+			print(json.dumps(appointment, indent=2, default=str))
+		else:
+			print(json.dumps(appointment, default=str))
+
+	except Exception as e:
+		print(f"Error: {e}")
+
+if __name__ == "__main__":
+	main()
