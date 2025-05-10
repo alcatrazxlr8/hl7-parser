@@ -19,7 +19,6 @@ logging.basicConfig(
 	format="%(asctime)s — %(levelname)s — %(message)s"
 )
 
-
 def main():
 	parser = argparse.ArgumentParser(description="HL7 SIU^S12 Appointment Parser")
 	parser.add_argument("filepath", help="Path to .hl7 file")
@@ -34,6 +33,7 @@ def main():
 	args = parser.parse_args()
 	logging.info("Started parsing HL7 file: %s", args.filepath)
 
+	input_base = os.path.splitext(os.path.basename(args.filepath))[0]
 
 	try:
 		# 1. Parse HL7
@@ -51,24 +51,27 @@ def main():
 		print(validated.model_dump_json(indent=2 if args.pretty else None))
 
 		# 4. Save parsed output to file
-		if args.output:
-			output_dir = os.path.dirname(args.output)
-			if output_dir:
-				os.makedirs(output_dir, exist_ok=True)
 
-			with open(args.output, "w") as f:
-				f.write(validated.model_dump_json(indent=2))
-			print(f"Saved parsed appointment JSON to: {args.output}")
-			logging.info("Saved parsed appointment JSON to: %s", args.output)
+		output_path = args.output or f"results/{input_base}.json"
+		output_dir = os.path.dirname(output_path)
+		if output_dir:
+			os.makedirs(output_dir, exist_ok=True)
+
+		with open(output_path, "w") as f:
+			f.write(validated.model_dump_json(indent=2))
+		print(f"Saved parsed appointment JSON to: {output_path}")
+		logging.info("Saved parsed appointment JSON to: %s", output_path)
 
 		# 5. Export schema (accodring to cli flag)
 		if args.export_schema:
 			os.makedirs("schema", exist_ok=True)
 			schema = Appointment.model_json_schema()
-			with open("schema/appointment_schema.json", "w") as f:
+			schema_path = f"schema/{input_base}.schema.json"
+			with open(schema_path, "w") as f:
 				json.dump(schema, f, indent=2)
-			print("Exported schema to: schema/appointment_schema.json")
-			logging.info("Exported JSON Schema to: schema/appointment_schema.json")
+			logging.info("Exported JSON Schema to: %s", schema_path)
+			print(f"Exported schema to: {schema_path}")
+
 
 	except ValidationError as ve:
 		# print("Validation failed:")
