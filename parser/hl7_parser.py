@@ -68,3 +68,8 @@ def build_appointment_object(segments: dict) -> dict:
 		"patient": pid_data,
 		"provider": pv1_data
 	}
+
+def split_messages(raw: str) -> list[str]:
+	"""Splits a raw HL7 string into individual messages starting with MSH|"""
+	chunks = re.split(r'(?=MSH\|)', raw)
+	return [chunk.strip() for chunk in chunks if chunk.strip()]

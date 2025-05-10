@@ -9,7 +9,8 @@ from parser.hl7_parser import (
 	read_hl7_file,
 	message_parser,
 	segment_parser,
-	build_appointment_object
+	build_appointment_object,
+	split_messages
 )
 
 logging.basicConfig(
@@ -36,33 +37,54 @@ def main():
 	input_base = os.path.splitext(os.path.basename(args.filepath))[0]
 
 	try:
-		# 1. Parse HL7
+		## 1. Parse HL7
 		message = read_hl7_file(args.filepath)
-		segments = message_parser(message)
-		extracted = segment_parser(segments)
-		appointment = build_appointment_object(extracted)
+		messages = split_messages(message)
 
-		# 2. Validate
-		validated = Appointment(**appointment)
+		appointments = []
+
+		for index, raw_message in enumerate(messages, 1):
+			segments = message_parser(raw_message)
+			extracted = segment_parser(segments)
+			appointment = build_appointment_object(extracted)
+			# 2. Validate
+			validated = Appointment(**appointment)
+			appointments.append(validated)
+			logging.info("Parsed message #%d successfully", index)
+
 		logging.info("Validated appointment structure successfully.")
 
-		# 3. Print to console
-		print("Parsed Appointment:")
-		print(validated.model_dump_json(indent=2 if args.pretty else None))
+		## 2. Print to console
+		# print("Parsed Appointment:")
+		# print(validated.model_dump_json(indent=2 if args.pretty else None))
+		print(f"\nParsed {len(appointments)} messages.")
+		for i, appt in enumerate(appointments, 1):
+			print(f"\nAppointment #{i}")
+			print(appt.model_dump_json(indent=2 if args.pretty else None))
 
-		# 4. Save parsed output to file
+		## 3. Save parsed output to file
+		# output_path = args.output or f"results/{input_base}.json"
+		# output_dir = os.path.dirname(output_path)
+		# if output_dir:
+		# 	os.makedirs(output_dir, exist_ok=True)
 
+		# with open(output_path, "w") as f:
+		# 	f.write(validated.model_dump_json(indent=2))
+		# print(f"Saved parsed appointment JSON to: {output_path}")
+		# logging.info("Saved parsed appointment JSON to: %s", output_path)
 		output_path = args.output or f"results/{input_base}.json"
 		output_dir = os.path.dirname(output_path)
 		if output_dir:
 			os.makedirs(output_dir, exist_ok=True)
 
 		with open(output_path, "w") as f:
-			f.write(validated.model_dump_json(indent=2))
-		print(f"Saved parsed appointment JSON to: {output_path}")
-		logging.info("Saved parsed appointment JSON to: %s", output_path)
+			# json.dump([a.model_dump() for a in appointments], f, indent=2)
+			f.write("[" + ",\n".join(a.model_dump_json(indent=2) for a in appointments) + "]")
 
-		# 5. Export schema (accodring to cli flag)
+		print(f"\nSaved parsed appointment(s) to: {output_path}")
+		logging.info("Saved parsed appointment(s) to: %s", output_path)
+
+		## 4. Export schema (accodring to cli flag)
 		if args.export_schema:
 			os.makedirs("schema", exist_ok=True)
 			schema = Appointment.model_json_schema()
