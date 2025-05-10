@@ -34,9 +34,12 @@ def parse_pid(segment: str) -> dict:
 	fields = segment.split("|")
 
 	id = fields[3].split("^")[0] if len(fields) > 3 else None
-	first_name = fields[5].split("^")[1] if len(fields) > 5 else None
-	middle_name = fields[5].split("^")[2] if (len(fields) > 5) else None
-	last_name = fields[5].split("^")[0] if len(fields) > 5 else None
+
+	name_parts = fields[5].split("^") if len(fields) > 5 else []
+	first_name = name_parts[1] if len(name_parts) > 1 else None
+	last_name = name_parts[0] if len(name_parts) > 0 else None
+	middle_name = name_parts[2] if len(name_parts) > 2 else None
+
 	dob = (
 		datetime.strptime(fields[7], "%Y%m%d").date()
 		if len(fields) > 7 and fields[7].strip()
@@ -56,8 +59,7 @@ def parse_pid(segment: str) -> dict:
 def parse_pv1(segment: str) -> dict:
 	fields = segment.split("|")
 
-	# Safely extract PV1-7 (attending doctor)
-	provider_field = fields[7] if len(fields) > 7 else ""
+	provider_field = fields[7] if len(fields) > 7 else None
 	parts = provider_field.split("^")
 
 	provider_id = parts[0] if len(parts) > 0 else None
