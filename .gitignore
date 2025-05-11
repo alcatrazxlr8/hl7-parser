@@ -3,3 +3,5 @@ __pycache__
 .venv
 tempCodeRunnerFile.py
 log.txt
+schema
+results
