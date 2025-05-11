@@ -44,7 +44,7 @@ def main():
 
 	# Prompt for file if not provided
 	if not args.filepath:
-		args.filepath = input("📝 Please enter path to .hl7 file: ").strip()
+		args.filepath = input("Please enter path to .hl7 file: ").strip()
 
 	input_base = os.path.splitext(os.path.basename(args.filepath))[0]
 
