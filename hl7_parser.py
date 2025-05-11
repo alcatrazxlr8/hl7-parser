@@ -22,8 +22,16 @@ logging.basicConfig(
 
 def main():
 	parser = argparse.ArgumentParser(description="HL7 SIU^S12 Appointment Parser")
-	parser.add_argument("filepath", help="Path to .hl7 file")
-	parser.add_argument("--pretty", action="store_true", help="Pretty-print the JSON output")
+	parser.add_argument("filepath", nargs="?", help="Path to .hl7 file (only if filepath is not provided)")
+
+	parser.add_argument(
+		"--no-pretty",
+		dest="pretty",
+		action="store_false",
+		help="Disable pretty-printing of JSON output (default is pretty)"
+	)
+	parser.set_defaults(pretty=True)
+
 	parser.add_argument("--output", help="Path to save parsed appointment JSON")
 	parser.add_argument(
 		"--export-schema",
@@ -33,6 +41,10 @@ def main():
 
 	args = parser.parse_args()
 	logging.info("Started parsing HL7 file: %s", args.filepath)
+
+	# Prompt for file if not provided
+	if not args.filepath:
+		args.filepath = input("📝 Please enter path to .hl7 file: ").strip()
 
 	input_base = os.path.splitext(os.path.basename(args.filepath))[0]
 
@@ -55,30 +67,18 @@ def main():
 		logging.info("Validated appointment structure successfully.")
 
 		## 2. Print to console
-		# print("Parsed Appointment:")
-		# print(validated.model_dump_json(indent=2 if args.pretty else None))
 		print(f"\nParsed {len(appointments)} messages.")
 		for i, appt in enumerate(appointments, 1):
 			print(f"\nAppointment #{i}")
 			print(appt.model_dump_json(indent=2 if args.pretty else None))
 
 		## 3. Save parsed output to file
-		# output_path = args.output or f"results/{input_base}.json"
-		# output_dir = os.path.dirname(output_path)
-		# if output_dir:
-		# 	os.makedirs(output_dir, exist_ok=True)
-
-		# with open(output_path, "w") as f:
-		# 	f.write(validated.model_dump_json(indent=2))
-		# print(f"Saved parsed appointment JSON to: {output_path}")
-		# logging.info("Saved parsed appointment JSON to: %s", output_path)
 		output_path = args.output or f"results/{input_base}.json"
 		output_dir = os.path.dirname(output_path)
 		if output_dir:
 			os.makedirs(output_dir, exist_ok=True)
 
 		with open(output_path, "w") as f:
-			# json.dump([a.model_dump() for a in appointments], f, indent=2)
 			f.write("[" + ",\n".join(a.model_dump_json(indent=2) for a in appointments) + "]")
 
 		print(f"\nSaved parsed appointment(s) to: {output_path}")
@@ -96,12 +96,9 @@ def main():
 
 
 	except ValidationError as ve:
-		# print("Validation failed:")
-		# print(ve)  # Shows which field(s) failed
 		for err in ve.errors():
 			loc = ".".join(str(x) for x in err["loc"])
 			print(f"	{loc}: {err['msg']} ({err['type']})")
-			# logging.error("Validation failed: %s", ve)
 			logging.error(f"	{loc}: {err['msg']} ({err['type']})")
 
 	except Exception as e:
