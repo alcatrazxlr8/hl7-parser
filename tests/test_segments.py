@@ -24,6 +24,12 @@ class TestParsePID(unittest.TestCase):
 		self.assertEqual(result["dob"], date(1985, 2, 10))
 		self.assertEqual(result["gender"], "M")
 
+	def test_pid_without_middle_name(self):
+		segment = "PID|1||P67890^^^HOSP^MR||Smith^Jane||19900101|F"
+		result = parse_pid(segment)
+
+		self.assertEqual(result["middle_name"], None)
+
 class TestParsePV1(unittest.TestCase):
 	def test_basic_pv1_parsing(self):
 		segment = "PV1|1|...|...|...|...|...|D67890^Smith^Dr"
